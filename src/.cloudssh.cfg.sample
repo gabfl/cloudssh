@@ -1,0 +1,11 @@
+[MAIN]
+
+# The default AWS region is 'us-eat-1' but you can override the default here
+# region = us-west-1
+
+# AWS profile override
+# If you want to use another AWS profile than [default]
+# aws_profile_name = 'some_profile_override'
+
+# SSH user override if your remote user is not the same as your local user
+# ssh_user = 'paul'
