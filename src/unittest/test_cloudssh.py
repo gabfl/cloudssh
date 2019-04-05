@@ -43,6 +43,7 @@ class Test(BaseTest):
 
     def test_get_aws_client(self):
 
+        cloudssh.set_region()
         client = cloudssh.get_aws_client()
 
         # assert isinstance(client, botocore.client.EC2)
@@ -56,6 +57,7 @@ class Test(BaseTest):
 
     def test_aws_lookup(self):
 
+        cloudssh.set_region()
         client = cloudssh.get_aws_client()
         response = cloudssh.aws_lookup(instance='some_instance', client=client)
 
