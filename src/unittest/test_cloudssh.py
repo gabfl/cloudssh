@@ -4,6 +4,7 @@ import botocore
 from .base import BaseTest
 from .. import cloudssh
 
+
 class Test(BaseTest):
 
     def test_get_regions(self):
@@ -17,7 +18,7 @@ class Test(BaseTest):
         args = cloudssh.parse_cli_args()
 
         assert type(args) is dict
-        assert args['region'] is None # defaulted to None
+        assert args['region'] is None  # defaulted to None
 
     def test_parse_user_config(self):
         user_config = cloudssh.parse_user_config()
@@ -25,7 +26,8 @@ class Test(BaseTest):
         assert isinstance(user_config, object)
 
     def test_get_value_from_user_config(self):
-        assert cloudssh.get_value_from_user_config('ssh_user') is str
+        cloudssh.parse_user_config()
+        assert cloudssh.get_value_from_user_config('aws_profile_name') is str
         assert cloudssh.get_value_from_user_config('invalid') is None
 
     def test_set_region(self):
@@ -34,7 +36,7 @@ class Test(BaseTest):
         assert cloudssh.set_region() == 'us-east-1'
 
         # Region sent from CLI
-        assert cloudssh.set_region(from_args = 'us-west-1') == 'us-west-1'
+        assert cloudssh.set_region(from_args='us-west-1') == 'us-west-1'
 
         # Invalid region name
         self.assertRaises(RuntimeError, cloudssh.set_region, 'us-invalid-1')
@@ -55,7 +57,7 @@ class Test(BaseTest):
     def test_aws_lookup(self):
 
         client = cloudssh.get_aws_client()
-        response = cloudssh.aws_lookup(instance = 'some_instance', client=client)
+        response = cloudssh.aws_lookup(instance='some_instance', client=client)
 
         assert isinstance(response, dict)
         assert isinstance(response['Reservations'], list)
@@ -63,28 +65,30 @@ class Test(BaseTest):
     def test_get_public_ip(self):
 
         reservations = [
-                {
-                    'Groups': [], 
-                    'Instances': [
-                        {'AmiLaunchIndex': 0, 
-                        'InstanceId': 'i-8747641e', 
-                        'InstanceType': 'm4.large', 
-                        'KeyName': 'us-east-1-keypair-nate', 
-                        'PrivateIpAddress': '10.0.0.60', 
-                        'PublicIpAddress': '123.456.7.89', 
-                        'State': {
-                            'Code': 16,
-                            'Name': 'running'}
-                        }
-                    ]
-                }
-            ]
+            {
+                'Groups': [],
+                'Instances': [
+                    {'AmiLaunchIndex': 0,
+                     'InstanceId': 'i-8747641e',
+                     'InstanceType': 'm4.large',
+                     'KeyName': 'us-east-1-keypair-nate',
+                     'PrivateIpAddress': '10.0.0.60',
+                     'PublicIpAddress': '123.456.7.89',
+                     'State': {
+                         'Code': 16,
+                         'Name': 'running'}
+                     }
+                ]
+            }
+        ]
 
-        assert cloudssh.get_public_ip(reservations=reservations) == '123.456.7.89'
+        assert cloudssh.get_public_ip(
+            reservations=reservations) == '123.456.7.89'
 
         # No reservations
         self.assertRaises(SystemExit, cloudssh.get_public_ip, reservations=[])
 
         # Reservations but no public IP
         reservations[0]['Instances'][0].pop('PublicIpAddress')
-        self.assertRaises(SystemExit, cloudssh.get_public_ip, reservations=reservations)
+        self.assertRaises(SystemExit, cloudssh.get_public_ip,
+                          reservations=reservations)
