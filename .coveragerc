@@ -10,4 +10,4 @@ omit =
   setup.py
 exclude_lines =
   if __name__ == '__main__':
-  def main():
+  def main()
