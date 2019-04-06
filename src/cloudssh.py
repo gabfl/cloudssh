@@ -139,21 +139,26 @@ def get_public_ip(reservations):
     exit()
 
 
-def ssh_subprocess(public_ip, user=None):
-    """ Open an ssh subprocess """
+def get_ssh_command(public_ip, user=None):
+    """ Return SSH command  """
 
     if user:
         connection_string = '%s@%s' % (user, public_ip)
     else:
         connection_string = public_ip
 
-    cmd = ['ssh', '%s' % (connection_string)]
-    subprocess.call(cmd)
+    return ['ssh', '%s' % (connection_string)]
+
+
+def ssh_subprocess(ssh_command):
+    """ Open an ssh subprocess """
+
+    subprocess.call(ssh_command)
 
 
 def main():
     # Read user config
-    config = parse_user_config()
+    parse_user_config()
 
     # Read CLI arguments
     args = parse_cli_args()
@@ -171,10 +176,11 @@ def main():
     public_ip = get_public_ip(response['Reservations'])
 
     # Open SSH connection in a subprocess
-    ssh_subprocess(
+    ssh_command = get_ssh_command(
         public_ip=public_ip,
         user=get_value_from_user_config('ssh_user')
     )
+    ssh_subprocess(ssh_command)
 
 
 if __name__ == '__main__':

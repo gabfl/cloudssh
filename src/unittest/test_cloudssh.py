@@ -61,6 +61,9 @@ class Test(BaseTest):
         cloudssh.set_region()
         client = cloudssh.get_aws_client()
 
+        # Lookup without an instance
+        self.assertRaises(RuntimeError, cloudssh.aws_lookup, client=client)
+
         # Lookup an instance name
         response = cloudssh.aws_lookup(
             instance='cloudssh_test_instance', client=client)
@@ -103,3 +106,12 @@ class Test(BaseTest):
         reservations[0]['Instances'][0].pop('PublicIpAddress')
         self.assertRaises(SystemExit, cloudssh.get_public_ip,
                           reservations=reservations)
+
+    def test_get_ssh_command(self):
+        assert cloudssh.get_ssh_command(public_ip='123.456.7.89') == [
+            'ssh', '123.456.7.89']
+
+        assert cloudssh.get_ssh_command(
+            public_ip='123.456.7.89',
+            user='paul'
+        ) == ['ssh', 'paul@123.456.7.89']
