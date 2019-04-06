@@ -2,15 +2,15 @@ from setuptools import setup
 
 try:
     import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
+    long_description = pypandoc.pypandoc.convert_file('README.md', 'rst')
 except(IOError, ImportError):
     long_description = open('README.md').read()
 
 
 setup(
     name='cloudssh',
-    version='1.0.0',
-    description='Auto scaling.',
+    version='1.0.1,
+    description='EC2 SSH connections helper',
     long_description=long_description,
     author='gab',
     author_email='gab@confiant.com',

@@ -14,9 +14,6 @@ venv/
 local/
 src/local/
 
-# Config file
-/cloudssh.cfg
-
 # IDE Specific
 .vscode
 

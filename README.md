@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/gabfl/cloudssh/branch/master/graph/badge.svg)](https://codecov.io/gh/gabfl/cloudssh)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-green.svg)](https://raw.githubusercontent.com/gabfl/cloudssh/master/LICENSE)
 
-EC2 ssh connections helper
+EC2 SSH connections helper
 
 ## An SSH connection helper for AWS
 
