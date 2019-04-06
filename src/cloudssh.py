@@ -8,17 +8,11 @@ import os.path
 region = None
 user_config = None
 
-
-def get_regions():
-    """
-        Returns a list of AWS regions
-        Sourced from https://docs.aws.amazon.com/general/latest/gr/rande.html
-    """
-
-    return ['us-east-2', 'us-east-1', 'us-west-1', 'us-west-2', 'ap-south-1',
-            'ap-northeast-3', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2',
-            'ap-northeast-1', 'ca-central-1', 'cn-north-1', 'cn-northwest-1',
-            'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-north-1', 'sa-east-1']
+# Sourced from https://docs.aws.amazon.com/general/latest/gr/rande.html
+regions = ['us-east-2', 'us-east-1', 'us-west-1', 'us-west-2', 'ap-south-1',
+           'ap-northeast-3', 'ap-northeast-2', 'ap-southeast-1', 'ap-southeast-2',
+           'ap-northeast-1', 'ca-central-1', 'cn-north-1', 'cn-northwest-1',
+           'eu-central-1', 'eu-west-1', 'eu-west-2', 'eu-west-3', 'eu-north-1', 'sa-east-1']
 
 
 def parse_cli_args():
@@ -27,7 +21,7 @@ def parse_cli_args():
     # Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--region", type=str,
-                        help="Region", choices=get_regions(), nargs='?')
+                        help="Region", choices=regions, nargs='?')
     parser.add_argument('instance', nargs='*')
     args = parser.parse_args()
 
@@ -77,7 +71,7 @@ def set_region(from_args=None, default='us-east-1'):
     else:
         region = default
 
-    if region not in get_regions():
+    if region not in regions:
         raise RuntimeError('%s is not a valid AWS region' % (region))
 
     return region

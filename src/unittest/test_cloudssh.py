@@ -1,5 +1,7 @@
 
-import botocore
+from unittest import mock
+
+import argparse
 
 from .base import BaseTest
 from .. import cloudssh
@@ -7,14 +9,10 @@ from .. import cloudssh
 
 class Test(BaseTest):
 
-    def test_get_regions(self):
-        regions = cloudssh.get_regions()
-
-        assert type(regions) == list
-        assert 'us-east-1' in regions
-        assert 'us-west-1' in regions
-
-    def test_parse_cli_args(self):
+    @mock.patch('argparse.ArgumentParser.parse_args',
+                return_value=argparse.Namespace(region=None, instance='my_server'))
+    def test_parse_cli_args(self, mock_args):
+        cloudssh.set_region()
         args = cloudssh.parse_cli_args()
 
         assert type(args) is dict
