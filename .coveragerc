@@ -7,5 +7,7 @@ omit =
   wsgi.py
   src/unittest/*
   venv/*
+  setup.py
 exclude_lines =
   if __name__ == '__main__':
+  def main()
