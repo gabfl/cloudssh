@@ -6,6 +6,21 @@
 
 EC2 ssh connections helper
 
+## An SSH connection helper for AWS
+
+`cloudssh` allows you to quickly connect to EC2 instances using their names or instance IDs.
+
+It will call the AWS SDK to find the instance public IP address and open a SSH connection in a subprocess.
+
+Example:
+
+![EC2](https://github.com/gabfl/cloudssh/blob/master/img/ec2.png?raw=true)
+
+You can connect to this instance with:
+```
+cloudssh dev
+```
+
 ## Installation and usage
 
 ```bash
