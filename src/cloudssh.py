@@ -45,12 +45,13 @@ def parse_user_config(filename='.cloudssh.cfg'):
     # Get full config file path
     full_path = os.path.expanduser('~') + '/' + filename
 
+    user_config = None
     if os.path.isfile(full_path):
         config = configparser.ConfigParser()
         config.read(full_path)
         user_config = config['MAIN']
 
-    return user_config or None
+    return user_config
 
 
 def get_value_from_user_config(item):
@@ -92,7 +93,7 @@ def get_aws_client():
 
 
 def is_instance_id(instance):
-    """ Return True if the user inputed an instance ID instead of a name """
+    """ Return True if the user input is an instance ID instead of a name """
 
     if instance[:2] == 'i-':
         return True
