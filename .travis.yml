@@ -7,7 +7,8 @@ before_install:
   - python setup.py install
 before_script:
   - cp src/unittest/assets/cfg/cloudssh.cfg ~/.cloudssh.cfg
-  - openssl aes-256-cbc -K $encrypted_32e91cce9841_key -iv $encrypted_32e91cce9841_iv -in src/unittest/assets/aws/credentials.enc -out ~/.aws/credentials -d
+  - mkdir ~/.aws
+  - openssl aes-256-cbc -K $encrypted_4c4621b9201c_key -iv $encrypted_4c4621b9201c_iv -in src/unittest/assets/aws/credentials.enc -out ~/.aws/credentials -d
 script:
   - pycodestyle --exclude=venv --ignore=E501 .
   - pytest
