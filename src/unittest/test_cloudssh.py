@@ -27,7 +27,8 @@ class Test(BaseTest):
 
     def test_get_value_from_user_config(self):
         cloudssh.parse_user_config()
-        assert cloudssh.get_value_from_user_config('aws_profile_name') is str
+        assert isinstance(cloudssh.get_value_from_user_config(
+            'aws_profile_name'), str)
         assert cloudssh.get_value_from_user_config('invalid') is None
 
     def test_set_region(self):

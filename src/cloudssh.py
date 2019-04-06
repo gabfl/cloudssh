@@ -58,7 +58,7 @@ def get_value_from_user_config(item):
 
     if user_config:
         try:
-            return str(user_config[item])
+            return user_config[item]
         except KeyError:
             pass
 
