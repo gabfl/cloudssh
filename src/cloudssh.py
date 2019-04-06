@@ -106,7 +106,7 @@ def aws_lookup(client, instance=None):
 
     Filters = []
 
-    if is_instance_id(instance) == False:  # Lookup by name
+    if is_instance_id(instance) is False:  # Lookup by name
         Filters = [
             {
                 'Name': 'tag:Name',

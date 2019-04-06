@@ -21,9 +21,11 @@ class Test(BaseTest):
         assert args['region'] is None  # defaulted to None
 
     def test_parse_user_config(self):
-        user_config = cloudssh.parse_user_config()
+        # Config file exists
+        assert isinstance(cloudssh.parse_user_config(), object)
 
-        assert isinstance(user_config, object)
+        # Config file does not exists
+        assert cloudssh.parse_user_config(filename='invalid.cfg') is None
 
     def test_get_value_from_user_config(self):
         cloudssh.parse_user_config()
@@ -60,8 +62,16 @@ class Test(BaseTest):
 
         cloudssh.set_region()
         client = cloudssh.get_aws_client()
-        response = cloudssh.aws_lookup(instance='some_instance', client=client)
 
+        # Lookup an instance name
+        response = cloudssh.aws_lookup(
+            instance='cloudssh_test_instance', client=client)
+        assert isinstance(response, dict)
+        assert isinstance(response['Reservations'], list)
+
+        # lookup an instance ID
+        response = cloudssh.aws_lookup(
+            instance='i-06bb6dbab77bfcf3f', client=client)
         assert isinstance(response, dict)
         assert isinstance(response['Reservations'], list)
 
