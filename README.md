@@ -32,4 +32,4 @@ cloudssh myserver # Call the module followed by the name of one of your servers
 
 ## Advanced configuration
 
-You can optionally create a file `~/.cloudssh.cfg` (see [example](.cloudssh.cfg.sample)).
+You can optionally create a file `~/.cloudssh/cloudssh.cfg` (see [example](.cloudssh.cfg.sample)).
