@@ -5,6 +5,7 @@ import configparser
 from sys import argv, exit
 import os
 import json
+import readline
 
 region = None
 user_config = None
@@ -289,6 +290,42 @@ def get_autocomplete_values(filename='index.json'):
         return []
 
     return index[profile_name].get(region, [])
+
+
+def autocomplete(text, state, is_case_sensitive=False):
+    """ Generic readline completion entry point. """
+
+    buffer = readline.get_line_buffer()
+
+    completion_list = comp = get_autocomplete_values()
+
+    if not is_case_sensitive:
+        buffer = buffer.lower()
+        comp = [c.lower() for c in completion_list]
+
+    results = [c for c in comp if c.startswith(buffer)] + [None]
+
+    # Handle multi-word inputs by truncating strings at the last space
+    if buffer.find(' ') > 0:
+        strip_pos = buffer.rfind(' ') + 1
+        results = [i[strip_pos:] for i in results if i is not None] + [None]
+
+    return results[state]
+
+
+def get_input_autocomplete(message=''):
+    """ Allow user to type input and provide auto-completion """
+
+    readline.set_completer_delims(' \t\n;')
+    readline.parse_and_bind("tab: complete")
+    readline.set_completer(autocomplete)
+
+    try:
+        return input(message).strip()
+    except KeyboardInterrupt:
+        return False
+    except Exception:  # Other Exception
+        return False
 
 
 def main():

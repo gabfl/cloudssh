@@ -336,3 +336,40 @@ class Test(BaseTest):
         filename = 'test_get_autocomplete_values'
 
         assert cloudssh.get_autocomplete_values(filename=filename) == []
+
+    @mock.patch.object(cloudssh, 'get_autocomplete_values', return_value=['one_thing', 'one_other_thing', 'third_thing', 'with space'])
+    @mock.patch('readline.get_line_buffer', return_value='one')
+    def test_autocomplete(self, mock_args, mock_args_2):
+
+        assert cloudssh.autocomplete('on', state=0) == 'one_thing'
+        assert cloudssh.autocomplete(
+            'on', state=1) == 'one_other_thing'
+        assert cloudssh.autocomplete('on', state=2) is None
+
+    @mock.patch.object(cloudssh, 'get_autocomplete_values', return_value=['one_thing', 'one_other_thing', 'third_thing', 'with space'])
+    @mock.patch('readline.get_line_buffer', return_value='with ')
+    def test_autocomplete_2(self, mock_args, mock_args_2):
+
+        assert cloudssh.autocomplete('on', state=0) == 'space'
+
+    @mock.patch.object(cloudssh, 'get_autocomplete_values', return_value=['one_thing', 'one_other_thing', 'third_thing'])
+    @mock.patch('readline.get_line_buffer', return_value='ONE')
+    def test_autocomplete_3(self, mock_args, mock_args_2):
+
+        assert cloudssh.autocomplete(
+            'on', state=0, is_case_sensitive=True) is None
+
+    @mock.patch.object(cloudssh, 'get_autocomplete_values', return_value=['one_thing', 'one_other_thing', 'third_thing'])
+    @mock.patch('readline.get_line_buffer', return_value='ONE')
+    def test_autocomplete_4(self, mock_args, mock_args_2):
+
+        assert cloudssh.autocomplete('on', state=0) == 'one_thing'
+        assert cloudssh.autocomplete(
+            'on', state=1) == 'one_other_thing'
+        assert cloudssh.autocomplete('on', state=2) is None
+
+    @mock.patch.object(cloudssh, 'get_autocomplete_values', return_value=['one_thing', 'one_other_thing', 'third_thing'])
+    @mock.patch('builtins.input', return_value='some_value')
+    def test_get_input_autocomplete(self, mock_args, mock_args_2):
+
+        assert cloudssh.get_input_autocomplete() == 'some_value'
