@@ -1,5 +1,9 @@
 
+import os
+import tempfile
 from unittest import mock
+from hashlib import sha1
+from random import random
 
 import argparse
 
@@ -14,10 +18,7 @@ class Test(BaseTest):
             'Groups': [],
             'Instances': [
                 {
-                    'AmiLaunchIndex': 0,
-                    'InstanceId': 'i-8747641e',
-                    'InstanceType': 'm4.large',
-                    'KeyName': 'us-east-1-keypair-nate',
+                    'InstanceId': 'i-' + sha1(str(random()).encode('utf-8')).hexdigest()[:18],
                     'PrivateIpAddress': '10.0.0.60',
                     'PublicIpAddress': '123.456.7.89',
                     'State': {
@@ -32,10 +33,7 @@ class Test(BaseTest):
                     ]
                 },
                 {
-                    'AmiLaunchIndex': 0,
-                    'InstanceId': 'i-87056lbe',
-                    'InstanceType': 'm4.large',
-                    'KeyName': 'us-east-1-keypair-nate',
+                    'InstanceId': 'i-' + sha1(str(random()).encode('utf-8')).hexdigest()[:18],
                     'PrivateIpAddress': '10.0.0.61',
                     'PublicIpAddress': '123.456.7.90',
                     'State': {
@@ -48,15 +46,81 @@ class Test(BaseTest):
                             'Value': 'test_instance_2'
                         }
                     ]
+                },
+                {
+                    'InstanceId': 'i-' + sha1(str(random()).encode('utf-8')).hexdigest()[:18],
+                    'PrivateIpAddress': '10.0.0.62',
+                    'PublicIpAddress': '123.456.7.91',
+                    'State': {
+                        'Code': 80,
+                        'Name': 'stopped'
+                    },
+                    'Tags': [
+                        {
+                            'Key': 'Name',
+                            'Value': 'test_instance_stopped'
+                        }
+                    ]
+                },
+                {
+                    'InstanceId': 'i-' + sha1(str(random()).encode('utf-8')).hexdigest()[:18],
+                    'PrivateIpAddress': '10.0.0.63',
+                    'PublicIpAddress': '123.456.7.94',
+                    'State': {
+                        'Code': 16,
+                        'Name': 'running'
+                    }
+                },
+                {
+                    'InstanceId': 'i-' + sha1(str(random()).encode('utf-8')).hexdigest()[:18],
+                    'PrivateIpAddress': '10.0.0.64',
+                    'PublicIpAddress': '123.456.7.95',
+                    'State': {
+                        'Code': 16,
+                        'Name': 'running'
+                    },
+                    'Tags': [
+                        {
+                            'Key': 'env',
+                            'Value': 'prod'
+                        }
+                    ]
                 }
             ]
         }
     ]
 
+    test_config = """
+        [MAIN]
+
+        region = us-east-1
+        aws_profile_name = cloud_ssh_unittest
+        ssh_user = paul
+    """
+
+    def setUp(self):
+        # Set unit tests config dir
+        self.tmp_config_dir = tempfile.TemporaryDirectory()
+        cloudssh.config_dir = self.tmp_config_dir.name + '/'
+
+        # Write default config
+        with open(cloudssh.config_dir + 'cloudssh.cfg', 'w') as f:
+            f.write(self.test_config)
+
+        # Parse config
+        cloudssh.parse_user_config()
+
+        # Set region
+        cloudssh.set_region()
+
+    def tearDown(self):
+        # Cleanup temp dir
+        self.tmp_config_dir.cleanup()
+
     @mock.patch('argparse.ArgumentParser.parse_args',
                 return_value=argparse.Namespace(region=None, build_index=None, instance='my_server'))
     def test_parse_cli_args(self, mock_args):
-        cloudssh.set_region()
+
         args = cloudssh.parse_cli_args()
 
         assert type(args) is dict
@@ -64,6 +128,7 @@ class Test(BaseTest):
         assert args['build_index'] is False  # defaulted to False
 
     def test_parse_user_config(self):
+
         # Config file exists
         assert isinstance(cloudssh.parse_user_config(), object)
 
@@ -71,14 +136,21 @@ class Test(BaseTest):
         assert cloudssh.parse_user_config(filename='invalid.cfg') is None
 
     def test_get_value_from_user_config(self):
-        cloudssh.parse_user_config()
-        assert isinstance(cloudssh.get_value_from_user_config(
-            'aws_profile_name'), str)
+
+        # Get a valid config
+        assert cloudssh.get_value_from_user_config(
+            'aws_profile_name') == 'cloud_ssh_unittest'
+
+        # We should get None with an invalid config
         assert cloudssh.get_value_from_user_config('invalid') is None
+
+        # We should get None if we don't have a loaded config
+        cloudssh.user_config = None
+        assert cloudssh.get_value_from_user_config('aws_profile_name') is None
 
     def test_set_region(self):
 
-        # Default region
+        # From config file
         assert cloudssh.set_region() == 'us-east-1'
 
         # Region sent from CLI
@@ -87,9 +159,14 @@ class Test(BaseTest):
         # Invalid region name
         self.assertRaises(RuntimeError, cloudssh.set_region, 'us-invalid-1')
 
+    @mock.patch.object(cloudssh, 'get_value_from_user_config', return_value=None)
+    def test_set_region_2(self, mock_args):
+
+        # Test default without CLI input or config file
+        assert cloudssh.set_region() == 'us-east-1'
+
     def test_get_aws_client(self):
 
-        cloudssh.set_region()
         client = cloudssh.get_aws_client()
 
         # assert isinstance(client, botocore.client.EC2)
@@ -103,7 +180,6 @@ class Test(BaseTest):
 
     def test_aws_lookup(self):
 
-        cloudssh.set_region()
         client = cloudssh.get_aws_client()
 
         # Lookup an instance name
@@ -154,7 +230,11 @@ class Test(BaseTest):
 
     def test_mkdir(self):
 
-        assert cloudssh.mkdir('/tmp/test_dir') is True
+        test_dir = '/tmp/test_mkdir'
+
+        assert cloudssh.mkdir(test_dir) is True
+
+        os.rmdir(test_dir)
 
     def test_get_instance_names(self):
 
@@ -176,7 +256,6 @@ class Test(BaseTest):
 
         # Read file
         assert cloudssh.read_index(filename=filename) == {'a': True}
-        cloudssh.delete_index(filename=filename)
 
         # Read invalid file
         assert cloudssh.read_index(filename='/tmp/nonexistent') == {}
@@ -189,14 +268,6 @@ class Test(BaseTest):
             filename=filename,
             content={}
         ) is True
-        cloudssh.delete_index(filename=filename)
-
-    def test_delete_index(self):
-
-        filename = 'test_delete_index'
-
-        cloudssh.write_index(filename=filename)
-        assert cloudssh.delete_index(filename=filename) is True
 
     @mock.patch.object(cloudssh, 'get_value_from_user_config', return_value='my_profile')
     def test_append_to_index(self, mock_args):
@@ -233,4 +304,35 @@ class Test(BaseTest):
         filename = 'test_index'
 
         assert cloudssh.build_index(filename=filename) is True
-        cloudssh.delete_index(filename=filename)
+
+        # Build index with config dir creation
+        with tempfile.TemporaryDirectory() as test_dir:
+            cloudssh.config_dir = test_dir + '/new_path/'
+            assert cloudssh.build_index(filename=filename) is True
+
+    def test_get_autocomplete_values(self):
+
+        filename = 'test_get_autocomplete_values'
+
+        cloudssh.region = 'us-east-1'
+
+        # Write test index
+        cloudssh.write_index(
+            filename=filename,
+            content={
+                'cloud_ssh_unittest': {
+                    'us-west-1': ['name_123'],
+                    'us-east-1': ['name_1', 'name_2'],
+                }
+            }
+        )
+
+        assert cloudssh.get_autocomplete_values(filename=filename) == [
+            'name_1', 'name_2']
+
+    @mock.patch.object(cloudssh, 'get_value_from_user_config', return_value='nonexistent_profile')
+    def test_get_autocomplete_values_2(self, mock_args):
+
+        filename = 'test_get_autocomplete_values'
+
+        assert cloudssh.get_autocomplete_values(filename=filename) == []

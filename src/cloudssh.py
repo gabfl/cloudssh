@@ -184,7 +184,7 @@ def is_dir(path):
 def mkdir(path):
     """ Create a directory """
 
-    os.makedirs(resolve_home(path), exist_ok=True)
+    os.makedirs(resolve_home(path))
 
     return True
 
@@ -200,10 +200,14 @@ def get_instance_names(reservations):
     names = []
     for reservation in reservations:
         for instance in reservation['Instances']:
+            # Skip non running instances
+            if instance.get('State') and instance['State'].get('Name', '') != 'running':
+                continue
+
             # Lookup instance name
             if instance.get('Tags') and len(instance['Tags']) > 0:
                 for tag in instance['Tags']:
-                    if tag.get('Key') and tag['Key'] == 'Name':
+                    if tag.get('Key') and tag['Key'] == 'Name' and tag['Value'] not in names:
                         names.append(tag['Value'])
 
     return names
@@ -228,16 +232,6 @@ def write_index(filename, content={}):
         f.write(content)
 
         return True
-
-    return False
-
-
-def delete_index(filename):
-    """ Delete index file """
-
-    os.remove(resolve_home(config_dir) + filename)
-
-    return True
 
 
 def append_to_index(existing_index, new):
@@ -280,6 +274,21 @@ def build_index(filename='index.json'):
     write_index(filename=filename, content=index)
 
     return True
+
+
+def get_autocomplete_values(filename='index.json'):
+
+    # Read index
+    index = read_index(filename)
+
+    # Set profile name
+    profile_name = get_value_from_user_config('aws_profile_name') or 'default'
+
+    # If there is no data for this profile name, return an empty list
+    if not index.get(profile_name):
+        return []
+
+    return index[profile_name].get(region, [])
 
 
 def main():
