@@ -21,6 +21,19 @@ You can connect to this instance with:
 cloudssh dev
 ```
 
+You can also use the auto-completion feature by building a local index of your AWS instances then calling `cloudssh` without any argument.
+```
+cloudssh --build_index
+# The instances index has been stored in ~/.cloudssh/.
+
+cloudssh
+# Start typing an instance name and press [TAB] to auto complete.
+```
+
+Example:
+
+![EC2](https://github.com/gabfl/cloudssh/blob/master/img/autocomplete_demo.gif?raw=true)
+
 ## Installation and usage
 
 ```bash

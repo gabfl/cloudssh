@@ -345,13 +345,18 @@ def main():
               (config_dir))
         exit()
 
+    # Read instance or request user input
+    instance = args['instance']
     if args['instance'] is None:
+        instance = get_input_autocomplete('Instance name of ID: ')
+
+    if not instance:
         raise RuntimeError('Usage: cloudssh some_instance')
 
     # AWS instance lookup
     response = aws_lookup(
         client=get_aws_client(),
-        instance=args['instance']
+        instance=instance
     )
 
     # Fetch public IP address or exit with a graceful message
