@@ -28,12 +28,15 @@ def parse_cli_args():
     parser.add_argument('instance', nargs='*')
     parser.add_argument("-b", "--build_index", action='store_true',
                         help="Build a local index of your AWS instances")
+    parser.add_argument("-s", "--search",
+                        help="Search an instance")
     args = parser.parse_args()
 
     return {
         'region': args.region,
         'instance': args.instance[0] if type(args.instance) is list and len(args.instance) > 0 else None,
         'build_index': args.build_index if args.build_index else False,
+        'search': args.search if args.search else None,
     }
 
 
@@ -190,7 +193,7 @@ def mkdir(path):
     return True
 
 
-def get_instance_names(reservations):
+def get_instances_list(reservations):
     """ Return a list of instance names from reservations """
 
     if len(reservations) == 0:
@@ -198,7 +201,7 @@ def get_instance_names(reservations):
         exit()
 
     # List instances
-    names = []
+    instances_list = []
     for reservation in reservations:
         for instance in reservation['Instances']:
             # Skip non running instances
@@ -208,10 +211,16 @@ def get_instance_names(reservations):
             # Lookup instance name
             if instance.get('Tags') and len(instance['Tags']) > 0:
                 for tag in instance['Tags']:
-                    if tag.get('Key') and tag['Key'] == 'Name' and tag['Value'] not in names:
-                        names.append(tag['Value'])
+                    if tag.get('Key') and tag['Key'] == 'Name':
+                        # and tag['Value'] not in names:
+                        instances_list.append(
+                            {
+                                'name': tag['Value'],
+                                'publicIp': instance['PublicIpAddress']
+                            }
+                        )
 
-    return names
+    return instances_list
 
 
 def read_index(filename):
@@ -266,10 +275,10 @@ def build_index(filename='index.json'):
     )
 
     # Get instance names
-    names = get_instance_names(response['Reservations'])
+    instances_list = get_instances_list(response['Reservations'])
 
     # Build new index
-    index = append_to_index(index, names)
+    index = append_to_index(index, instances_list)
 
     # Write index to file
     write_index(filename=filename, content=index)
@@ -277,7 +286,60 @@ def build_index(filename='index.json'):
     return True
 
 
-def get_autocomplete_values(filename='index.json'):
+def search(query):
+    """ Search an instance by name """
+
+    instances_list = get_instances_list_from_index()
+
+    # Get matches
+    matches = [s for s in instances_list if query.lower() in s['name'].lower()]
+
+    if matches:
+        if len(matches) > 1:
+            print('Results:')
+            for match in matches:
+                print('* %s' % match['name'])
+        else:
+            if confirm('Found "%s", connect?' % matches[0]['name'], True):
+                connect(matches[0]['publicIp'])
+    else:
+        print('No result!')
+
+
+def confirm(prompt=None, resp=False):
+    """
+        Source: http://code.activestate.com/recipes/541096-prompt-the-user-for-confirmation/
+        prompts for yes or no response from the user. Returns True for yes and
+        False for no.
+        'resp' should be set to the default value assumed by the caller when
+        user simply types ENTER.
+        >>> confirm(prompt='Create Directory?', resp=True)
+        Create Directory? [y]|n:
+        True
+    """
+
+    if prompt is None:
+        prompt = 'Confirm'
+
+    if resp:
+        prompt = '%s [Y/n]: ' % (prompt)
+    else:
+        prompt = '%s [y/N]: ' % (prompt)
+
+    while True:
+        ans = input(prompt)
+        if not ans:
+            return resp
+        if ans not in ['y', 'Y', 'n', 'N']:
+            print('please enter y or n.')
+            continue
+        if ans == 'y' or ans == 'Y':
+            return True
+        if ans == 'n' or ans == 'N':
+            return False
+
+
+def get_instances_list_from_index(filename='index.json'):
 
     # Read index
     index = read_index(filename)
@@ -297,7 +359,8 @@ def autocomplete(text, state, is_case_sensitive=False):
 
     buffer = readline.get_line_buffer()
 
-    completion_list = comp = get_autocomplete_values()
+    completion_list = comp = [i['name']
+                              for i in get_instances_list_from_index()]
 
     if not is_case_sensitive:
         buffer = buffer.lower()
@@ -328,6 +391,29 @@ def get_input_autocomplete(message=''):
         return False
 
 
+def instance_lookup(instance):
+    """ Lookup an instance to find it's public IP """
+
+    # Read index
+    instances_list = get_instances_list_from_index()
+
+    # Search in index first
+    if instances_list:
+        result = [i for i in instances_list if i['name'].lower() ==
+                  instance.lower()]
+        if len(result) > 0:
+            return result[0]['publicIp']
+
+    # AWS instance lookup
+    response = aws_lookup(
+        client=get_aws_client(),
+        instance=instance
+    )
+
+    # Fetch public IP address or exit with a graceful message
+    return get_public_ip(response['Reservations'])
+
+
 def main():
     # Read user config
     parse_user_config()
@@ -345,26 +431,31 @@ def main():
               (config_dir))
         exit()
 
+    # Search an instance name
+    if args['search']:
+        search(query=args['search'])
+        exit()
+
     # Read instance or request user input
     instance = args['instance']
     if args['instance'] is None:
         instance = get_input_autocomplete('Instance name of ID: ')
 
     if not instance:
-        raise RuntimeError('Usage: cloudssh some_instance')
+        raise RuntimeError('Usage: cssh some_instance')
 
-    # AWS instance lookup
-    response = aws_lookup(
-        client=get_aws_client(),
-        instance=instance
-    )
-
-    # Fetch public IP address or exit with a graceful message
-    public_ip = get_public_ip(response['Reservations'])
+    # Lookup an instance to find it's public IP
+    public_ip = instance_lookup(instance)
 
     # Open SSH connection in a subprocess
+    connect(public_ip)
+
+
+def connect(ip):
+    """ Open SSH connection in a subprocess """
+
     ssh_command = get_ssh_command(
-        public_ip=public_ip,
+        public_ip=ip,
         user=get_value_from_user_config('ssh_user')
     )
     ssh_subprocess(ssh_command)

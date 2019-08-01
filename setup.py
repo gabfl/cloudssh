@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'cloudssh = cloudssh.cloudssh:main',
+            'cssh = cloudssh.cloudssh:main',
         ],
     },
     classifiers=[  # see https://pypi.python.org/pypi?%3Aaction=list_classifiers
