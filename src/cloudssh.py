@@ -1,11 +1,12 @@
-import boto3
-import argparse
 import subprocess
 import configparser
 from sys import argv, exit
 import os
 import json
 import readline
+
+import boto3
+import argparse
 
 region = None
 user_config = None
@@ -202,6 +203,7 @@ def get_instances_list(reservations):
 
     # List instances
     instances_list = []
+    instances_names = []
     for reservation in reservations:
         for instance in reservation['Instances']:
             # Skip non running instances
@@ -212,13 +214,18 @@ def get_instances_list(reservations):
             if instance.get('Tags') and len(instance['Tags']) > 0:
                 for tag in instance['Tags']:
                     if tag.get('Key') and tag['Key'] == 'Name':
-                        # and tag['Value'] not in names:
+                        # Suffix if multiple instances have the same name
+                        suffix = '#' + \
+                            str(len(
+                                [i for i in instances_names if i.lower() == tag['Value'].lower()]))
+
                         instances_list.append(
                             {
-                                'name': tag['Value'],
+                                'name': tag['Value'] + (suffix if suffix != '#0' else ''),
                                 'publicIp': instance['PublicIpAddress']
                             }
                         )
+                        instances_names.append(tag['Value'])
 
     return instances_list
 
@@ -351,7 +358,8 @@ def get_instances_list_from_index(filename='index.json'):
     if not index.get(profile_name):
         return []
 
-    return index[profile_name].get(region, [])
+    values = index[profile_name].get(region, [])
+    return sorted(values, key=lambda k: k['name'])
 
 
 def autocomplete(text, state, is_case_sensitive=False):

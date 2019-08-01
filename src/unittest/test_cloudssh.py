@@ -386,14 +386,13 @@ class Test(BaseTest):
             filename=filename,
             content={
                 'cloud_ssh_unittest': {
-                    'us-west-1': ['name_123'],
-                    'us-east-1': ['name_1', 'name_2'],
+                    'us-west-1': [{'name': 'name_123'}],
+                    'us-east-1': [{'name': 'name_1'}, {'name': 'name_2'}],
                 }
             }
         )
 
-        assert cloudssh.get_instances_list_from_index(filename=filename) == [
-            'name_1', 'name_2']
+        assert cloudssh.get_instances_list_from_index(filename=filename) == [{'name': 'name_1'}, {'name': 'name_2'}]
 
     @mock.patch.object(cloudssh, 'get_value_from_user_config', return_value='nonexistent_profile')
     def test_get_instances_list_from_index_2(self, mock_args):
