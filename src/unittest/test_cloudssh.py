@@ -1,9 +1,11 @@
 
 import os
+import sys
 import tempfile
 from unittest import mock
 from hashlib import sha1
 from random import random
+from io import StringIO
 
 import argparse
 
@@ -118,7 +120,7 @@ class Test(BaseTest):
         self.tmp_config_dir.cleanup()
 
     @mock.patch('argparse.ArgumentParser.parse_args',
-                return_value=argparse.Namespace(region=None, build_index=None, instance='my_server'))
+                return_value=argparse.Namespace(region=None, build_index=None, instance='my_server', search=None))
     def test_parse_cli_args(self, mock_args):
 
         args = cloudssh.parse_cli_args()
@@ -236,14 +238,17 @@ class Test(BaseTest):
 
         os.rmdir(test_dir)
 
-    def test_get_instance_names(self):
+    def test_get_instances_list(self):
 
-        assert cloudssh.get_instance_names(
-            reservations=self.fake_reservations) == ['test_instance', 'test_instance_2']
+        assert cloudssh.get_instances_list(
+            reservations=self.fake_reservations) == [
+                {'name': 'test_instance', 'publicIp': '123.456.7.89'},
+                {'name': 'test_instance_2', 'publicIp': '123.456.7.90'}
+        ]
 
         # No reservations
         self.assertRaises(
-            SystemExit, cloudssh.get_instance_names, reservations=[])
+            SystemExit, cloudssh.get_instances_list, reservations=[])
 
     def test_read_index(self):
 
@@ -310,9 +315,69 @@ class Test(BaseTest):
             cloudssh.config_dir = test_dir + '/new_path/'
             assert cloudssh.build_index(filename=filename) is True
 
-    def test_get_autocomplete_values(self):
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    @mock.patch('src.cloudssh.confirm', return_value=True)
+    def test_search_one_result(self, mock_args, mock_args_2):
+        saved_stdout = sys.stdout
+        try:
+            out = StringIO()
+            sys.stdout = out
 
-        filename = 'test_get_autocomplete_values'
+            # Render file content to stdout
+            cloudssh.search(query='other_thing')
+
+            output = out.getvalue().strip()
+            assert output == ''  # Because it was intercepted and never printed
+        finally:
+            sys.stdout = saved_stdout
+
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    def test_search_multiple_results(self, mock_args):
+        saved_stdout = sys.stdout
+        try:
+            out = StringIO()
+            sys.stdout = out
+
+            # Render file content to stdout
+            cloudssh.search(query='thing')
+
+            output = out.getvalue().strip()
+            assert output == 'Results:\n* one_thing\n* one_other_thing\n* third_thing'
+        finally:
+            sys.stdout = saved_stdout
+
+    def test_search_no_result(self):
+        saved_stdout = sys.stdout
+        try:
+            out = StringIO()
+            sys.stdout = out
+
+            # Render file content to stdout
+            cloudssh.search(query='invalid_name')
+
+            output = out.getvalue().strip()
+            assert output == 'No result!'
+        finally:
+            sys.stdout = saved_stdout
+
+    def test_confirm(self):
+        with mock.patch('builtins.input', return_value='y'):
+            self.assertTrue(cloudssh.confirm())
+            self.assertTrue(cloudssh.confirm(resp=True))
+
+    def test_confirm_2(self):
+        with mock.patch('builtins.input', return_value='n'):
+            self.assertFalse(cloudssh.confirm())
+            self.assertFalse(cloudssh.confirm(resp=True))
+
+    def test_confirm_3(self):
+        # Test empty return
+        with mock.patch('builtins.input', return_value=''):
+            self.assertTrue(cloudssh.confirm(resp=True))
+
+    def test_get_instances_list_from_index(self):
+
+        filename = 'test_get_instances_list_from_index'
 
         cloudssh.region = 'us-east-1'
 
@@ -321,23 +386,22 @@ class Test(BaseTest):
             filename=filename,
             content={
                 'cloud_ssh_unittest': {
-                    'us-west-1': ['name_123'],
-                    'us-east-1': ['name_1', 'name_2'],
+                    'us-west-1': [{'name': 'name_123'}],
+                    'us-east-1': [{'name': 'name_1'}, {'name': 'name_2'}],
                 }
             }
         )
 
-        assert cloudssh.get_autocomplete_values(filename=filename) == [
-            'name_1', 'name_2']
+        assert cloudssh.get_instances_list_from_index(filename=filename) == [{'name': 'name_1'}, {'name': 'name_2'}]
 
     @mock.patch.object(cloudssh, 'get_value_from_user_config', return_value='nonexistent_profile')
-    def test_get_autocomplete_values_2(self, mock_args):
+    def test_get_instances_list_from_index_2(self, mock_args):
 
-        filename = 'test_get_autocomplete_values'
+        filename = 'test_get_instances_list_from_index'
 
-        assert cloudssh.get_autocomplete_values(filename=filename) == []
+        assert cloudssh.get_instances_list_from_index(filename=filename) == []
 
-    @mock.patch.object(cloudssh, 'get_autocomplete_values', return_value=['one_thing', 'one_other_thing', 'third_thing', 'with space'])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing'}, {'name': 'one_other_thing'}, {'name': 'third_thing'}, {'name': 'with space'}])
     @mock.patch('readline.get_line_buffer', return_value='one')
     def test_autocomplete(self, mock_args, mock_args_2):
 
@@ -346,20 +410,20 @@ class Test(BaseTest):
             'on', state=1) == 'one_other_thing'
         assert cloudssh.autocomplete('on', state=2) is None
 
-    @mock.patch.object(cloudssh, 'get_autocomplete_values', return_value=['one_thing', 'one_other_thing', 'third_thing', 'with space'])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing'}, {'name': 'one_other_thing'}, {'name': 'third_thing'}, {'name': 'with space'}])
     @mock.patch('readline.get_line_buffer', return_value='with ')
     def test_autocomplete_2(self, mock_args, mock_args_2):
 
         assert cloudssh.autocomplete('on', state=0) == 'space'
 
-    @mock.patch.object(cloudssh, 'get_autocomplete_values', return_value=['one_thing', 'one_other_thing', 'third_thing'])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing'}, {'name': 'one_other_thing'}, {'name': 'third_thing'}])
     @mock.patch('readline.get_line_buffer', return_value='ONE')
     def test_autocomplete_3(self, mock_args, mock_args_2):
 
         assert cloudssh.autocomplete(
             'on', state=0, is_case_sensitive=True) is None
 
-    @mock.patch.object(cloudssh, 'get_autocomplete_values', return_value=['one_thing', 'one_other_thing', 'third_thing'])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing'}, {'name': 'one_other_thing'}, {'name': 'third_thing'}])
     @mock.patch('readline.get_line_buffer', return_value='ONE')
     def test_autocomplete_4(self, mock_args, mock_args_2):
 
@@ -368,8 +432,20 @@ class Test(BaseTest):
             'on', state=1) == 'one_other_thing'
         assert cloudssh.autocomplete('on', state=2) is None
 
-    @mock.patch.object(cloudssh, 'get_autocomplete_values', return_value=['one_thing', 'one_other_thing', 'third_thing'])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing'}, {'name': 'one_other_thing'}, {'name': 'third_thing'}])
     @mock.patch('builtins.input', return_value='some_value')
     def test_get_input_autocomplete(self, mock_args, mock_args_2):
 
         assert cloudssh.get_input_autocomplete() == 'some_value'
+
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    def test_instance_lookup_index(self, mock_args):
+
+        assert cloudssh.instance_lookup(
+            'one_thing') == ('index', '123.456.789.0')
+
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    def test_instance_lookup_aws(self, mock_args):
+
+        assert cloudssh.instance_lookup(
+            'cloudssh_test_instance') == ('aws', '52.6.180.201')

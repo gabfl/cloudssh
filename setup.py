@@ -9,7 +9,7 @@ except(IOError, ImportError):
 
 setup(
     name='cloudssh',
-    version='1.1',
+    version='1.2',
     description='EC2 SSH connections helper',
     long_description=long_description,
     author='gab',
@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'cloudssh = cloudssh.cloudssh:main',
+            'cssh = cloudssh.cloudssh:main',
         ],
     },
     classifiers=[  # see https://pypi.python.org/pypi?%3Aaction=list_classifiers
