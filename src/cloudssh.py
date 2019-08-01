@@ -399,8 +399,8 @@ def instance_lookup(instance):
 
     # Search in index first
     if instances_list:
-        result = [i for i in instances_list if i['name'].lower() ==
-                  instance.lower()]
+        result = [i for i in instances_list if
+                  i['name'].lower() == instance.lower()]
         if len(result) > 0:
             return result[0]['publicIp']
 

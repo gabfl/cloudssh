@@ -18,16 +18,25 @@ Example:
 
 You can connect to this instance with:
 ```
-cloudssh dev
+cssh dev
 ```
 
 You can also use the **auto-completion feature** by building a local index of your AWS instances then calling `cloudssh` without any argument.
 ```
-cloudssh --build_index
+cssh --build_index
 # The instances index has been stored in ~/.cloudssh/.
 
-cloudssh
+cssh
 # Start typing an instance name and press [TAB] to auto complete.
+```
+
+Or search instances by name with:
+```
+cssh --build_index
+# The instances index has been stored in ~/.cloudssh/.
+
+cssh --search http
+# Found "web-http-prod", connect? [Y/n]: 
 ```
 
 Example:
@@ -40,7 +49,7 @@ Example:
 pip3 install cloudssh
 aws configure # To configure your AWS credentials
 
-cloudssh myserver # Call the module followed by the name of one of your servers
+cssh myserver # Call the module followed by the name of one of your servers
 ```
 
 ## Advanced configuration
