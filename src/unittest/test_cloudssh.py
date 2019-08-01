@@ -391,3 +391,15 @@ class Test(BaseTest):
     def test_get_input_autocomplete(self, mock_args, mock_args_2):
 
         assert cloudssh.get_input_autocomplete() == 'some_value'
+
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    def test_instance_lookup_index(self, mock_args):
+
+        assert cloudssh.instance_lookup(
+            'one_thing') == ('index', '123.456.789.0')
+
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    def test_instance_lookup_aws(self, mock_args):
+
+        assert cloudssh.instance_lookup(
+            'cloudssh_test_instance') == ('aws', '52.6.180.201')

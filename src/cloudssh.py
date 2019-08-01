@@ -402,7 +402,7 @@ def instance_lookup(instance):
         result = [i for i in instances_list if
                   i['name'].lower() == instance.lower()]
         if len(result) > 0:
-            return result[0]['publicIp']
+            return ('index', result[0]['publicIp'])
 
     # AWS instance lookup
     response = aws_lookup(
@@ -411,7 +411,7 @@ def instance_lookup(instance):
     )
 
     # Fetch public IP address or exit with a graceful message
-    return get_public_ip(response['Reservations'])
+    return ('aws', get_public_ip(response['Reservations']))
 
 
 def main():
@@ -445,7 +445,7 @@ def main():
         raise RuntimeError('Usage: cssh some_instance')
 
     # Lookup an instance to find it's public IP
-    public_ip = instance_lookup(instance)
+    source, public_ip = instance_lookup(instance)
 
     # Open SSH connection in a subprocess
     connect(public_ip)
