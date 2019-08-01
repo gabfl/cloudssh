@@ -215,13 +215,13 @@ def get_instances_list(reservations):
                 for tag in instance['Tags']:
                     if tag.get('Key') and tag['Key'] == 'Name':
                         # Suffix if multiple instances have the same name
-                        suffix = '#' + \
-                            str(len(
-                                [i for i in instances_names if i.lower() == tag['Value'].lower()]))
+                        n = len(
+                            [i for i in instances_names if i.lower() == tag['Value'].lower()])
+                        suffix = '#' + str(n).zfill(2) if n > 0 else ''
 
                         instances_list.append(
                             {
-                                'name': tag['Value'] + (suffix if suffix != '#0' else ''),
+                                'name': tag['Value'] + suffix,
                                 'publicIp': instance['PublicIpAddress']
                             }
                         )
