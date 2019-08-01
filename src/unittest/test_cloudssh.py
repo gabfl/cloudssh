@@ -1,9 +1,11 @@
 
 import os
+import sys
 import tempfile
 from unittest import mock
 from hashlib import sha1
 from random import random
+from io import StringIO
 
 import argparse
 
@@ -312,6 +314,51 @@ class Test(BaseTest):
         with tempfile.TemporaryDirectory() as test_dir:
             cloudssh.config_dir = test_dir + '/new_path/'
             assert cloudssh.build_index(filename=filename) is True
+
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    @mock.patch('src.cloudssh.confirm', return_value=True)
+    def test_search_one_result(self, mock_args, mock_args_2):
+        saved_stdout = sys.stdout
+        try:
+            out = StringIO()
+            sys.stdout = out
+
+            # Render file content to stdout
+            cloudssh.search(query='other_thing')
+
+            output = out.getvalue().strip()
+            assert output == ''  # Because it was intercepted and never printed
+        finally:
+            sys.stdout = saved_stdout
+
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    def test_search_multiple_results(self, mock_args):
+        saved_stdout = sys.stdout
+        try:
+            out = StringIO()
+            sys.stdout = out
+
+            # Render file content to stdout
+            cloudssh.search(query='thing')
+
+            output = out.getvalue().strip()
+            assert output == 'Results:\n* one_thing\n* one_other_thing\n* third_thing'
+        finally:
+            sys.stdout = saved_stdout
+
+    def test_search_no_result(self):
+        saved_stdout = sys.stdout
+        try:
+            out = StringIO()
+            sys.stdout = out
+
+            # Render file content to stdout
+            cloudssh.search(query='invalid_name')
+
+            output = out.getvalue().strip()
+            assert output == 'No result!'
+        finally:
+            sys.stdout = saved_stdout
 
     def test_confirm(self):
         with mock.patch('builtins.input', return_value='y'):
