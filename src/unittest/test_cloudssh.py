@@ -20,7 +20,7 @@ class Test(BaseTest):
             'Groups': [],
             'Instances': [
                 {
-                    'InstanceId': 'i-' + sha1(str(random()).encode('utf-8')).hexdigest()[:18],
+                    'InstanceId': 'i-b929323f777f4c016d',
                     'PrivateIpAddress': '10.0.0.60',
                     'PublicIpAddress': '123.456.7.89',
                     'State': {
@@ -35,7 +35,7 @@ class Test(BaseTest):
                     ]
                 },
                 {
-                    'InstanceId': 'i-' + sha1(str(random()).encode('utf-8')).hexdigest()[:18],
+                    'InstanceId': 'i-2959b4a6e3cdd13a2f',
                     'PrivateIpAddress': '10.0.0.61',
                     'PublicIpAddress': '123.456.7.90',
                     'State': {
@@ -120,7 +120,7 @@ class Test(BaseTest):
         self.tmp_config_dir.cleanup()
 
     @mock.patch('argparse.ArgumentParser.parse_args',
-                return_value=argparse.Namespace(region=None, build_index=None, instance='my_server', search=None))
+                return_value=argparse.Namespace(region=None, build_index=None, instance='my_server', search=None, info=None))
     def test_parse_cli_args(self, mock_args):
 
         args = cloudssh.parse_cli_args()
@@ -128,6 +128,7 @@ class Test(BaseTest):
         assert type(args) is dict
         assert args['region'] is None  # defaulted to None
         assert args['build_index'] is False  # defaulted to False
+        assert args['info'] is None  # defaulted to None
 
     def test_parse_user_config(self):
 
@@ -196,18 +197,28 @@ class Test(BaseTest):
         assert isinstance(response, dict)
         assert isinstance(response['Reservations'], list)
 
-    def test_get_public_ip(self):
+    def test_get_instance_infos(self):
 
-        assert cloudssh.get_public_ip(
-            reservations=self.fake_reservations) == '123.456.7.89'
+        assert cloudssh.get_instance_infos(
+            reservations=self.fake_reservations) == {
+                'id': 'i-b929323f777f4c016d',
+                'launch_date': None,
+                'private_ip': '10.0.0.60',
+                'public_ip': '123.456.7.89',
+                'subnet': None,
+                'tags': [{'Key': 'Name', 'Value': 'test_instance'}],
+                'type': None,
+                'vpc': None
+        }
 
         # No reservations
-        self.assertRaises(SystemExit, cloudssh.get_public_ip, reservations=[])
+        self.assertRaises(
+            SystemExit, cloudssh.get_instance_infos, reservations=[])
 
         # Reservations but no public IP
         altered = self.fake_reservations
         altered[0]['Instances'][0].pop('PublicIpAddress')
-        self.assertRaises(SystemExit, cloudssh.get_public_ip,
+        self.assertRaises(SystemExit, cloudssh.get_instance_infos,
                           reservations=altered)
 
     def test_get_ssh_command(self):
@@ -242,8 +253,31 @@ class Test(BaseTest):
 
         assert cloudssh.get_instances_list(
             reservations=self.fake_reservations) == [
-                {'name': 'test_instance', 'publicIp': '123.456.7.89'},
-                {'name': 'test_instance_2', 'publicIp': '123.456.7.90'}
+                {
+                    'name': 'test_instance',
+                    'detail': {
+                        'id': 'i-b929323f777f4c016d',
+                        'public_ip': None,
+                        'private_ip': '10.0.0.60',
+                        'type': None,
+                        'vpc': None,
+                        'subnet': None,
+                        'launch_date': None,
+                        'tags': [{'Key': 'Name', 'Value': 'test_instance'}]
+                    }
+                }, {
+                    'name': 'test_instance_2',
+                    'detail': {
+                        'id': 'i-2959b4a6e3cdd13a2f',
+                        'public_ip': '123.456.7.90',
+                        'private_ip': '10.0.0.61',
+                        'type': None,
+                        'vpc': None,
+                        'subnet': None,
+                        'launch_date': None,
+                        'tags': [{'Key': 'Name', 'Value': 'test_instance_2'}]
+                    }
+                }
         ]
 
         # No reservations
@@ -315,7 +349,7 @@ class Test(BaseTest):
             cloudssh.config_dir = test_dir + '/new_path/'
             assert cloudssh.build_index(filename=filename) is True
 
-    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'detail': {'publicIp': '123.456.789.0'}}, {'name': 'one_other_thing', 'detail': {'publicIp': '123.456.789.1'}}, {'name': 'third_thing', 'detail': {'publicIp': '123.456.789.2'}}])
     @mock.patch('src.cloudssh.confirm', return_value=True)
     def test_search_one_result(self, mock_args, mock_args_2):
         saved_stdout = sys.stdout
@@ -331,15 +365,16 @@ class Test(BaseTest):
         finally:
             sys.stdout = saved_stdout
 
-    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing',  'detail': {'publicIp': '123.456.789.0'}}, {'name': 'one_other_thing',  'detail': {'publicIp': '123.456.789.1'}}, {'name': 'third_thing',  'detail': {'publicIp': '123.456.789.2'}}])
     def test_search_multiple_results(self, mock_args):
         saved_stdout = sys.stdout
         try:
             out = StringIO()
             sys.stdout = out
 
-            # Render file content to stdout
-            cloudssh.search(query='thing')
+            # Catch `exit()` and render content to stdout
+            self.assertRaises(
+                SystemExit, cloudssh.search, query='thing')
 
             output = out.getvalue().strip()
             assert output == 'Results:\n* one_thing\n* one_other_thing\n* third_thing'
@@ -392,7 +427,8 @@ class Test(BaseTest):
             }
         )
 
-        assert cloudssh.get_instances_list_from_index(filename=filename) == [{'name': 'name_1'}, {'name': 'name_2'}]
+        assert cloudssh.get_instances_list_from_index(filename=filename) == [
+            {'name': 'name_1'}, {'name': 'name_2'}]
 
     @mock.patch.object(cloudssh, 'get_value_from_user_config', return_value='nonexistent_profile')
     def test_get_instances_list_from_index_2(self, mock_args):
@@ -438,14 +474,23 @@ class Test(BaseTest):
 
         assert cloudssh.get_input_autocomplete() == 'some_value'
 
-    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing',  'detail': {'public_ip': '123.456.789.0'}}, {'name': 'one_other_thing',  'detail': {'public_ip': '123.456.789.1'}}, {'name': 'third_thing',  'detail': {'public_ip': '123.456.789.2'}}])
     def test_instance_lookup_index(self, mock_args):
 
         assert cloudssh.instance_lookup(
-            'one_thing') == ('index', '123.456.789.0')
+            'one_thing') == ('index', {'public_ip': '123.456.789.0'})
 
-    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'publicIp': '123.456.789.0'}, {'name': 'one_other_thing', 'publicIp': '123.456.789.1'}, {'name': 'third_thing', 'publicIp': '123.456.789.2'}])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing',  'detail': {'public_ip': '123.456.789.0'}}, {'name': 'one_other_thing',  'detail': {'public_ip': '123.456.789.1'}}, {'name': 'third_thing',  'detail': {'public_ip': '123.456.789.2'}}])
     def test_instance_lookup_aws(self, mock_args):
 
         assert cloudssh.instance_lookup(
-            'cloudssh_test_instance') == ('aws', '52.6.180.201')
+            'cloudssh_test_instance') == ('aws', {
+                'id': 'i-06bb6dbab77bfcf3f',
+                'public_ip': '52.6.180.201',
+                'private_ip': '172.31.91.210',
+                'type': 't2.micro',
+                'vpc': 'vpc-37911a4d',
+                'subnet': 'subnet-e4f389ca',
+                'launch_date': '2019-04-05 19:15:28+00:00',
+                'tags': [{'Key': 'Name', 'Value': 'cloudssh_test_instance'}]
+            })
