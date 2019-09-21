@@ -365,7 +365,7 @@ class Test(BaseTest):
         finally:
             sys.stdout = saved_stdout
 
-    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing',  'detail': {'publicIp': '123.456.789.0'}}, {'name': 'one_other_thing',  'detail': {'publicIp': '123.456.789.1'}}, {'name': 'third_thing',  'detail': {'publicIp': '123.456.789.2'}}])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'detail': {'publicIp': '123.456.789.0'}}, {'name': 'one_other_thing', 'detail': {'publicIp': '123.456.789.1'}}, {'name': 'third_thing', 'detail': {'publicIp': '123.456.789.2'}}])
     def test_search_multiple_results(self, mock_args):
         saved_stdout = sys.stdout
         try:
@@ -474,13 +474,13 @@ class Test(BaseTest):
 
         assert cloudssh.get_input_autocomplete() == 'some_value'
 
-    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing',  'detail': {'public_ip': '123.456.789.0'}}, {'name': 'one_other_thing',  'detail': {'public_ip': '123.456.789.1'}}, {'name': 'third_thing',  'detail': {'public_ip': '123.456.789.2'}}])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'detail': {'public_ip': '123.456.789.0'}}, {'name': 'one_other_thing', 'detail': {'public_ip': '123.456.789.1'}}, {'name': 'third_thing', 'detail': {'public_ip': '123.456.789.2'}}])
     def test_instance_lookup_index(self, mock_args):
 
         assert cloudssh.instance_lookup(
             'one_thing') == ('index', {'public_ip': '123.456.789.0'})
 
-    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing',  'detail': {'public_ip': '123.456.789.0'}}, {'name': 'one_other_thing',  'detail': {'public_ip': '123.456.789.1'}}, {'name': 'third_thing',  'detail': {'public_ip': '123.456.789.2'}}])
+    @mock.patch.object(cloudssh, 'get_instances_list_from_index', return_value=[{'name': 'one_thing', 'detail': {'public_ip': '123.456.789.0'}}, {'name': 'one_other_thing', 'detail': {'public_ip': '123.456.789.1'}}, {'name': 'third_thing', 'detail': {'public_ip': '123.456.789.2'}}])
     def test_instance_lookup_aws(self, mock_args):
 
         assert cloudssh.instance_lookup(
