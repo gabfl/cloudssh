@@ -31,6 +31,8 @@ def parse_cli_args():
                         help="Build a local index of your AWS instances")
     parser.add_argument("-s", "--search",
                         help="Search an instance")
+    parser.add_argument("-i", "--info", action='store_true',
+                        help="Display instance information (ID, IPs)")
     args = parser.parse_args()
 
     return {
@@ -38,6 +40,7 @@ def parse_cli_args():
         'instance': args.instance[0] if type(args.instance) is list and len(args.instance) > 0 else None,
         'build_index': args.build_index if args.build_index else False,
         'search': args.search if args.search else None,
+        'info': args.info if args.info else None,
     }
 
 
@@ -137,18 +140,27 @@ def aws_lookup(client, instance=None, max_results=5):
     return response
 
 
-def get_public_ip(reservations):
-    """ Get instance public IP """
+def get_instance_infos(reservations):
+    """ Get instance infos """
 
     if len(reservations) == 0:
-        print('No instance found matching this name or instance ID.')
+        print('No instance found matching this input.')
         exit()
 
     # Get first instance
     reservation = reservations[0]['Instances'][0]
 
     if reservation.get('PublicIpAddress'):
-        return reservation['PublicIpAddress']
+        return {
+            'id': reservation['InstanceId'],
+            'public_ip': reservation.get('PublicIpAddress'),
+            'private_ip': reservation.get('PrivateIpAddress'),
+            'type': reservation.get('InstanceType'),
+            'vpc': reservation.get('VpcId'),
+            'subnet': reservation.get('SubnetId'),
+            'launch_date': str(reservation.get('LaunchTime')) if reservation.get('LaunchTime') else None,
+            'tags': reservation.get('Tags'),
+        }
 
     print('No public IP found for this instance.')
     exit()
@@ -222,9 +234,19 @@ def get_instances_list(reservations):
                         instances_list.append(
                             {
                                 'name': tag['Value'] + suffix,
-                                'publicIp': instance['PublicIpAddress']
+                                'detail': {
+                                    'id': instance['InstanceId'],
+                                    'public_ip': instance.get('PublicIpAddress'),
+                                    'private_ip': instance.get('PrivateIpAddress'),
+                                    'type': instance.get('InstanceType'),
+                                    'vpc': instance.get('VpcId'),
+                                    'subnet': instance.get('SubnetId'),
+                                    'launch_date': str(instance.get('LaunchTime')) if instance.get('LaunchTime') else None,
+                                    'tags': instance.get('Tags'),
+                                }
                             }
                         )
+
                         instances_names.append(tag['Value'])
 
     return instances_list
@@ -306,9 +328,10 @@ def search(query):
             print('Results:')
             for match in matches:
                 print('* %s' % match['name'])
+            exit()
         else:
-            if confirm('Found "%s", connect?' % matches[0]['name'], True):
-                connect(matches[0]['publicIp'])
+            if confirm('Found "%s", continue?' % matches[0]['name'], True):
+                return ('index', matches[0]['detail'])
     else:
         print('No result!')
 
@@ -410,7 +433,7 @@ def instance_lookup(instance):
         result = [i for i in instances_list if
                   i['name'].lower() == instance.lower()]
         if len(result) > 0:
-            return ('index', result[0]['publicIp'])
+            return ('index', result[0]['detail'])
 
     # AWS instance lookup
     response = aws_lookup(
@@ -419,7 +442,7 @@ def instance_lookup(instance):
     )
 
     # Fetch public IP address or exit with a graceful message
-    return ('aws', get_public_ip(response['Reservations']))
+    return ('aws', get_instance_infos(response['Reservations']))
 
 
 def main():
@@ -440,23 +463,51 @@ def main():
         exit()
 
     # Search an instance name
+    detail = None
     if args['search']:
-        search(query=args['search'])
-        exit()
+        source, detail = search(query=args['search'])
 
-    # Read instance or request user input
-    instance = args['instance']
-    if args['instance'] is None:
-        instance = get_input_autocomplete('Instance name of ID: ')
+    if detail is None:
+        # Read instance or request user input
+        input_ = args['instance']
+        if args['instance'] is None:
+            input_ = get_input_autocomplete('Instance name of ID: ')
 
-    if not instance:
-        raise RuntimeError('Usage: cssh some_instance')
+        if not input_:
+            raise RuntimeError('Usage: cssh some_instance')
 
-    # Lookup an instance to find it's public IP
-    source, public_ip = instance_lookup(instance)
+        # Lookup an instance to find it's public IP
+        source, detail = instance_lookup(input_)
 
-    # Open SSH connection in a subprocess
-    connect(public_ip)
+    if args['info']:  # Display instance informations
+        print('* Network')
+        print("Public ID: %s" %
+              (detail.get('public_ip', 'not available')))
+        print("Private ID: %s" %
+              (detail.get('private_ip', 'not available')))
+        print('\n* VPC/subnet')
+        print("VPC ID: %s" %
+              (detail.get('vpc', 'not available')))
+        print("Subnet ID: %s" %
+              (detail.get('subnet', 'not available')))
+        print('\n* Misc')
+        print("Instance name: %s" % (
+            next((x['Value'] for x in detail.get('tags', []) if x['Key'].lower() == 'name'), 'not available')))
+        print("Instance ID: %s" %
+              (detail.get('id', 'not available')))
+        print("Instance type: %s" %
+              (detail.get('type', 'not available')))
+        print("Launch date: %s" %
+              (detail.get('launch_date', 'not available')))
+        print('\n* Tags')
+        for item in detail.get('tags', []):
+            print('  %s = %s' % (item.get('Key', 'Undefined'),
+                                 item.get('Value', 'Undefined')))
+        if len(detail.get('tags', [])) == 0:
+            print('No tags!')
+
+    else:  # Open SSH connection in a subprocess
+        connect(detail['public_ip'])
 
 
 def connect(ip):
