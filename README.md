@@ -39,6 +39,29 @@ cssh --search http
 # Found "web-http-prod", connect? [Y/n]: 
 ```
 
+Or lookup an instance details:
+```
+cssh web-http-prod --info
+# * Network
+# Public ID: 123.***.***.***
+# Private ID: 10.***.***.***
+#
+# * VPC/subnet
+# VPC ID: vpc-******
+# Subnet ID: subnet-******
+#
+# * Misc
+# Instance name: web-http-prod
+# Instance ID: i-******
+# Instance type: t2.xlarge
+# Launch date: 2019-10-12 15:44:36+00:00
+#
+# * Tags
+#   product = web_cluster
+#   environment = production
+#   Name = web-http-prod
+```
+
 Example:
 
 ![EC2](https://github.com/gabfl/cloudssh/blob/master/img/autocomplete_demo.gif?raw=true)
