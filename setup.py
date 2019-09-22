@@ -9,7 +9,7 @@ except(IOError, ImportError):
 
 setup(
     name='cloudssh',
-    version='1.2',
+    version='1.3',
     description='EC2 SSH connections helper',
     long_description=long_description,
     author='gab',
