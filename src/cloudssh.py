@@ -481,9 +481,9 @@ def main():
 
     if args['info']:  # Display instance informations
         print('* Network')
-        print("Public ID: %s" %
+        print("Public IP: %s" %
               (detail.get('public_ip', 'not available')))
-        print("Private ID: %s" %
+        print("Private IP: %s" %
               (detail.get('private_ip', 'not available')))
         print('\n* VPC/subnet')
         print("VPC ID: %s" %
