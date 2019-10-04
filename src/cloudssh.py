@@ -331,9 +331,10 @@ def search(query):
             exit()
         else:
             if confirm('Found "%s", continue?' % matches[0]['name'], True):
-                return ('index', matches[0]['detail'])
+                return 'index', matches[0]['detail']
     else:
         print('No result!')
+        exit()
 
 
 def confirm(prompt=None, resp=False):

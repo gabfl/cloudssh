@@ -387,8 +387,9 @@ class Test(BaseTest):
             out = StringIO()
             sys.stdout = out
 
-            # Render file content to stdout
-            cloudssh.search(query='invalid_name')
+            # Catch `exit()` and render content to stdout
+            self.assertRaises(
+                SystemExit, cloudssh.search, query='invalid_name')
 
             output = out.getvalue().strip()
             assert output == 'No result!'
