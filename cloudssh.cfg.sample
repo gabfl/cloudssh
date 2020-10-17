@@ -11,7 +11,7 @@
 # ssh_user = paul
 
 # Proxy jump (bastion) option
-ssh_proxyjump = 123.456.78.9
+# ssh_proxyjump = 123.456.78.9
 
-# Additional SSH flags
-#ssh_flags = ""
+# Additional SSH flag
+# ssh_flag = -v
