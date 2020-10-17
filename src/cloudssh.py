@@ -166,7 +166,7 @@ def get_instance_infos(reservations):
     exit()
 
 
-def get_ssh_command(public_ip, user=None):
+def get_ssh_command(public_ip, user=None, proxyjump=None, flags=None):
     """ Return SSH command  """
 
     if user:
@@ -174,7 +174,14 @@ def get_ssh_command(public_ip, user=None):
     else:
         connection_string = public_ip
 
-    return ['ssh', '%s' % (connection_string)]
+    connection_flags = ''
+    if flags:
+        connection_flags = flags
+
+    if proxyjump:
+        connection_flags += ' -J %s' % (proxyjump)
+
+    return ['ssh', '%s' % (connection_flags.strip()), '%s' % (connection_string)]
 
 
 def ssh_subprocess(ssh_command):
@@ -516,7 +523,9 @@ def connect(ip):
 
     ssh_command = get_ssh_command(
         public_ip=ip,
-        user=get_value_from_user_config('ssh_user')
+        user=get_value_from_user_config('ssh_user'),
+        proxyjump=get_value_from_user_config('ssh_proxyjump'),
+        flags=get_value_from_user_config('ssh_flags')
     )
     ssh_subprocess(ssh_command)
 
