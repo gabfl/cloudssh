@@ -230,6 +230,23 @@ class Test(BaseTest):
             user='paul'
         ) == ['ssh', 'paul@123.456.7.89']
 
+        assert cloudssh.get_ssh_command(
+            public_ip='123.456.7.89',
+            proxyjump='1.2.3.4'
+        ) == ['ssh', '-J 1.2.3.4', '123.456.7.89']
+
+        assert cloudssh.get_ssh_command(
+            public_ip='123.456.7.89',
+            flag='-v'
+        ) == ['ssh', 'v', '123.456.7.89']
+
+        assert cloudssh.get_ssh_command(
+            public_ip='123.456.7.89',
+            user='paul',
+            proxyjump='1.2.3.4',
+            flag='-v'
+        ) == ['ssh', '-J 1.2.3.4', 'v', 'paul@123.456.7.89']
+
     def test_resolve_home(self):
 
         assert cloudssh.resolve_home('/tmp/full/path') == '/tmp/full/path'
