@@ -1,8 +1,8 @@
 # cloudssh
 
-[![Build Status](https://travis-ci.org/gabfl/cloudssh.svg?branch=master)](https://travis-ci.org/gabfl/cloudssh)
-[![codecov](https://codecov.io/gh/gabfl/cloudssh/branch/master/graph/badge.svg)](https://codecov.io/gh/gabfl/cloudssh)
-[![MIT licensed](https://img.shields.io/badge/license-MIT-green.svg)](https://raw.githubusercontent.com/gabfl/cloudssh/master/LICENSE)
+[![Build Status](https://travis-ci.org/gabfl/cloudssh.svg?branch=main)](https://travis-ci.org/gabfl/cloudssh)
+[![codecov](https://codecov.io/gh/gabfl/cloudssh/branch/main/graph/badge.svg)](https://codecov.io/gh/gabfl/cloudssh)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-green.svg)](https://raw.githubusercontent.com/gabfl/cloudssh/main/LICENSE)
 
 EC2 SSH connections helper
 
@@ -14,7 +14,7 @@ It will call the AWS SDK to find the instance public IP address and open a SSH c
 
 Example:
 
-![EC2](https://github.com/gabfl/cloudssh/blob/master/img/ec2.png?raw=true)
+![EC2](https://github.com/gabfl/cloudssh/blob/main/img/ec2.png?raw=true)
 
 You can connect to this instance with:
 ```
@@ -64,7 +64,7 @@ cssh web-http-prod --info
 
 Example:
 
-![EC2](https://github.com/gabfl/cloudssh/blob/master/img/autocomplete_demo.gif?raw=true)
+![EC2](https://github.com/gabfl/cloudssh/blob/main/img/autocomplete_demo.gif?raw=true)
 
 ## Installation and usage
 
