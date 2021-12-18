@@ -251,14 +251,14 @@ class Test(BaseTest):
         assert cloudssh.get_ssh_command(
             public_ip='123.456.7.89',
             flag='-v'
-        ) == ['ssh', 'v', '123.456.7.89']
+        ) == ['ssh', '-v', '123.456.7.89']
 
         assert cloudssh.get_ssh_command(
             public_ip='123.456.7.89',
             user='paul',
             proxyjump='1.2.3.4',
             flag='-v'
-        ) == ['ssh', '-J 1.2.3.4', 'v', 'paul@123.456.7.89']
+        ) == ['ssh', '-J 1.2.3.4', '-v', 'paul@123.456.7.89']
 
     def test_resolve_home(self):
 
