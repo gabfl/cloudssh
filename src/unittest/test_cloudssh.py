@@ -15,6 +15,19 @@ from .. import cloudssh
 
 class Test(BaseTest):
 
+    # This is a real instance in the real test account
+    # Might need updating if the instance becomes unavailable
+    real_instance = {
+        'id': 'i-0d1ab7cd99158dfb5',
+        'public_ip': '3.84.141.144',
+        'private_ip': '172.31.81.127',
+        'type': 't1.micro',
+                'vpc': 'vpc-37911a4d',
+                'subnet': 'subnet-e4f389ca',
+                'launch_date': '2021-12-18 15:21:23+00:00',
+                'tags': [{'Key': 'Name', 'Value': 'cloudssh_test_instance'}]
+    }
+
     fake_reservations = [
         {
             'Groups': [],
@@ -193,7 +206,7 @@ class Test(BaseTest):
 
         # lookup an instance ID
         response = cloudssh.aws_lookup(
-            instance='i-06bb6dbab77bfcf3f', client=client)
+            instance=self.real_instance['id'], client=client)
         assert isinstance(response, dict)
         assert isinstance(response['Reservations'], list)
 
@@ -238,14 +251,14 @@ class Test(BaseTest):
         assert cloudssh.get_ssh_command(
             public_ip='123.456.7.89',
             flag='-v'
-        ) == ['ssh', 'v', '123.456.7.89']
+        ) == ['ssh', '-v', '123.456.7.89']
 
         assert cloudssh.get_ssh_command(
             public_ip='123.456.7.89',
             user='paul',
             proxyjump='1.2.3.4',
             flag='-v'
-        ) == ['ssh', '-J 1.2.3.4', 'v', 'paul@123.456.7.89']
+        ) == ['ssh', '-J 1.2.3.4', '-v', 'paul@123.456.7.89']
 
     def test_resolve_home(self):
 
@@ -502,13 +515,4 @@ class Test(BaseTest):
     def test_instance_lookup_aws(self, mock_args):
 
         assert cloudssh.instance_lookup(
-            'cloudssh_test_instance') == ('aws', {
-                'id': 'i-06bb6dbab77bfcf3f',
-                'public_ip': '52.6.180.201',
-                'private_ip': '172.31.91.210',
-                'type': 't2.micro',
-                'vpc': 'vpc-37911a4d',
-                'subnet': 'subnet-e4f389ca',
-                'launch_date': '2019-04-05 19:15:28+00:00',
-                'tags': [{'Key': 'Name', 'Value': 'cloudssh_test_instance'}]
-            })
+            'cloudssh_test_instance') == ('aws', self.real_instance)

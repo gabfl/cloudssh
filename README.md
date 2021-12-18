@@ -1,6 +1,6 @@
 # cloudssh
 
-[![Build Status](https://travis-ci.org/gabfl/cloudssh.svg?branch=main)](https://travis-ci.org/gabfl/cloudssh)
+[![Build Status](https://github.com/gabfl/cloudssh/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/gabfl/cloudssh/actions)
 [![codecov](https://codecov.io/gh/gabfl/cloudssh/branch/main/graph/badge.svg)](https://codecov.io/gh/gabfl/cloudssh)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-green.svg)](https://raw.githubusercontent.com/gabfl/cloudssh/main/LICENSE)
 
