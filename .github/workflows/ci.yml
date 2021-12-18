@@ -22,3 +22,7 @@ jobs:
         run: |
           mkdir ~/.cloudssh/
           cp src/unittest/assets/cfg/cloudssh.cfg ~/.cloudssh/cloudssh.cfg
+      - name: Decrypt AWS credentials
+        run: |
+          mkdir ~/.aws
+          gpg --quiet --batch --yes --decrypt --passphrase="${{ secrets.GPG_PASSPHRASE_AWS_CREDENTIALS }}" --output ~/.aws/credentials src/unittest/assets/aws/credentials.gpg
