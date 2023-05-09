@@ -1,17 +1,13 @@
 from setuptools import setup
 
-try:
-    import pypandoc
-    long_description = pypandoc.convert_file('README.md', 'rst')
-except(IOError, ImportError):
-    long_description = open('README.md').read()
+import pypandoc
 
 
 setup(
     name='cloudssh',
     version='1.4',
     description='EC2 SSH connections helper',
-    long_description=long_description,
+    long_description=pypandoc.convert_file('README.md', 'rst'),
     author='gab',
     author_email='gab@confiant.com',
     url='https://github.com/gabfl/cloudssh',
