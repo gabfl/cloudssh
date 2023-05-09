@@ -26,10 +26,14 @@ jobs:
         run: |
           mkdir ~/.aws
           gpg --quiet --batch --yes --decrypt --passphrase="${{ secrets.GPG_PASSPHRASE_AWS_CREDENTIALS }}" --output ~/.aws/credentials src/unittest/assets/aws/credentials.gpg
+      - name: Install deb dependencies
+        run: |
+          sudo apt update
+          sudo apt install pandoc
       - name: Install Python dependencies
         run: |
           pip install -U pip
-          pip install pycodestyle coverage pytest
+          pip install pycodestyle coverage pytest pypandoc
           python setup.py install
       - name: Run pycodestyle
         run: |
